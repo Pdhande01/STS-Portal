@@ -5,7 +5,7 @@ import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Label } from "../components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../components/ui/tabs";
+
 import { signIn, getProfile } from "../../lib/auth";
 
 export function Login() {
@@ -53,7 +53,7 @@ export function Login() {
               <Wrench className="w-10 h-10 text-blue-600" />
             </div>
             <div className="text-left">
-              <span className="text-3xl font-bold text-white block">Smart Tech Service</span>
+              <span className="text-3xl font-bold text-white block">Smart Tech Service Portal</span>
               <span className="text-blue-200 text-sm flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Your Tech Partner
@@ -70,74 +70,49 @@ export function Login() {
             <CardDescription className="text-base">Sign in to your account</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="user" className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6">
-                <TabsTrigger value="user" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-blue-600 data-[state=active]:to-blue-700 data-[state=active]:text-white">
-                  User
-                </TabsTrigger>
-                <TabsTrigger value="technician" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-green-600 data-[state=active]:to-green-700 data-[state=active]:text-white">
-                  Technician
-                </TabsTrigger>
-                <TabsTrigger value="admin" className="data-[state=active]:bg-gradient-to-r data-[state=active]:from-purple-600 data-[state=active]:to-purple-700 data-[state=active]:text-white">
-                  Admin
-                </TabsTrigger>
-              </TabsList>
+            {error && (
+              <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
 
-              {error && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm">
-                  {error}
-                </div>
-              )}
-
-              {/* All tabs share the same form — role is determined by the profile after login */}
-              {(["user", "technician", "admin"] as const).map((role) => (
-                <TabsContent key={role} value={role}>
-                  <form onSubmit={handleLogin} className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor={`${role}-email`}>Email</Label>
-                      <Input
-                        id={`${role}-email`}
-                        type="email"
-                        placeholder={`${role}@example.com`}
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="h-11"
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor={`${role}-password`}>Password</Label>
-                      <Input
-                        id={`${role}-password`}
-                        type="password"
-                        placeholder="••••••••"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="h-11"
-                        required
-                      />
-                    </div>
-                    <Button
-                      type="submit"
-                      disabled={loading}
-                      className={`w-full h-11 shadow-lg ${
-                        role === "user"
-                          ? "bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800"
-                          : role === "technician"
-                          ? "bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"
-                          : "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-                      }`}
-                    >
-                      {loading ? (
-                        <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing in...</>
-                      ) : (
-                        `Login as ${role.charAt(0).toUpperCase() + role.slice(1)}`
-                      )}
-                    </Button>
-                  </form>
-                </TabsContent>
-              ))}
-            </Tabs>
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="user@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="h-11"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="h-11"
+                  required
+                />
+              </div>
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full h-11 shadow-lg bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white"
+              >
+                {loading ? (
+                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Signing in...</>
+                ) : (
+                  "Login"
+                )}
+              </Button>
+            </form>
 
             <div className="mt-6 text-center text-sm">
               <p className="text-gray-600">

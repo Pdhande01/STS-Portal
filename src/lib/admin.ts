@@ -28,30 +28,26 @@ export async function getAllTechnicians(): Promise<Profile[]> {
   return data as Profile[]
 }
 
-// ─── Add Technician (creates auth user + profile) ─────────────────────────────
+// ─── Promote User to Technician ──────────────────────────────────────────────────
 
-export async function addTechnician(
-  email: string,
-  password: string,
-  fullName: string,
-  phone: string,
+export async function promoteToTechnician(
+  userId: string,
   specialization: string
 ) {
-  // Create the auth user through supabase auth  
-  const result = await signUp(email, password, fullName, phone, 'technician')
-  
-  // The trigger auto-creates the profile, but we need to update specialization
-  if (result.user) {
-    // Wait a moment for trigger to fire, then update specialization
-    await new Promise(r => setTimeout(r, 500))
-    const { error } = await supabase
-      .from('profiles')
-      .update({ specialization })
-      .eq('id', result.user.id)
-    if (error) throw error
-  }
+  // Update the user's role and specialization in the profiles table.
+  // Requires the admin to be securely logged in (RLS checks this).
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ 
+      role: 'technician',
+      specialization 
+    })
+    .eq('id', userId)
+    .select()
+    .single()
 
-  return result
+  if (error) throw error
+  return data
 }
 
 // ─── Assign Technician to Service Request ────────────────────────────────────

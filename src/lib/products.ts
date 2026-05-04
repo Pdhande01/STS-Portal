@@ -64,12 +64,14 @@ export async function createOrder(cartItems: CartItem[]): Promise<Order> {
 
   // Decrement stock for each product
   for (const item of cartItems) {
-    await supabase.rpc('decrement_stock', {
+    const { error } = await supabase.rpc('decrement_stock', {
       product_id: item.productId,
       amount: item.quantity,
-    }).catch(() => {
-      // If the RPC doesn't exist yet, just skip stock update
     })
+    if (error) {
+      // If the RPC doesn't exist yet or fails, just skip stock update
+      console.warn('Could not update stock:', error.message)
+    }
   }
 
   return order as Order

@@ -16,7 +16,7 @@ export function Home() {
             </div>
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                Smart Tech Service
+                Smart Tech Service Portal
               </h1>
               <p className="text-xs text-gray-500">Your Tech Partner</p>
             </div>
@@ -384,11 +384,11 @@ export function Home() {
               </ul>
             </div>
             <div>
-              <h4 className="font-bold mb-4">Technology Stack</h4>
+              <h4 className="font-bold mb-4">Contact Us</h4>
               <p className="text-gray-400 text-sm">
-                Frontend: React, TypeScript<br />
-                Backend: Node.js / PHP<br />
-                Responsive & Secure Design
+                123 Tech Avenue, Silicon Valley<br />
+                San Francisco, CA 94107<br />
+                Phone: +1 (555) 123-4567
               </p>
             </div>
           </div>

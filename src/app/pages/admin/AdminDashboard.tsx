@@ -13,7 +13,7 @@ import { Badge } from "../../components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
 import { useAuth } from "../../../contexts/AuthContext";
-import { getAllUsers, getAllTechnicians, addTechnician, assignTechnicianToService, getAdminStats } from "../../../lib/admin";
+import { getAllUsers, getAllTechnicians, promoteToTechnician, assignTechnicianToService, getAdminStats } from "../../../lib/admin";
 import { getAllServiceRequests } from "../../../lib/services";
 import { getProducts, addProduct } from "../../../lib/products";
 import type { Profile, ServiceRequest, Product } from "../../../lib/supabase";
@@ -31,8 +31,9 @@ export function AdminDashboard() {
   const [services, setServices] = useState<ServiceRequest[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
 
-  // New technician form
-  const [techForm, setTechForm] = useState({ name: "", email: "", phone: "", password: "", specialization: "" });
+  // Promote technician form
+  const [selectedUserIdForTech, setSelectedUserIdForTech] = useState("");
+  const [specializationForTech, setSpecializationForTech] = useState("");
   const [addingTech, setAddingTech] = useState(false);
   const [techError, setTechError] = useState("");
 
@@ -70,19 +71,22 @@ export function AdminDashboard() {
 
   useEffect(() => { loadAll(); }, []);
 
-  const handleAddTechnician = async (e: React.FormEvent) => {
+  const handlePromoteTechnician = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedUserIdForTech || !specializationForTech) {
+      setTechError("Please select a user and specialization.");
+      return;
+    }
     setTechError("");
     setAddingTech(true);
     try {
-      await addTechnician(
-        techForm.email, techForm.password, techForm.name, techForm.phone, techForm.specialization
-      );
-      setTechForm({ name: "", email: "", phone: "", password: "", specialization: "" });
+      await promoteToTechnician(selectedUserIdForTech, specializationForTech);
+      setSelectedUserIdForTech("");
+      setSpecializationForTech("");
       await loadAll();
-      alert("Technician added successfully!");
+      alert("User promoted to technician successfully!");
     } catch (err: unknown) {
-      setTechError(err instanceof Error ? err.message : "Failed to add technician.");
+      setTechError(err instanceof Error ? err.message : "Failed to promote technician.");
     } finally {
       setAddingTech(false);
     }
@@ -289,36 +293,27 @@ export function AdminDashboard() {
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Add New Technician</DialogTitle>
-                        <DialogDescription>Create a technician account</DialogDescription>
+                        <DialogTitle>Promote User to Technician</DialogTitle>
+                        <DialogDescription>Select an existing user to promote</DialogDescription>
                       </DialogHeader>
-                      <form onSubmit={handleAddTechnician} className="space-y-4 py-4">
+                      <form onSubmit={handlePromoteTechnician} className="space-y-4 py-4">
                         {techError && (
                           <div className="p-3 bg-red-50 border border-red-200 text-red-700 rounded text-sm">{techError}</div>
                         )}
                         <div className="space-y-2">
-                          <Label htmlFor="tech-name">Full Name</Label>
-                          <Input id="tech-name" placeholder="Mike Johnson" value={techForm.name}
-                            onChange={(e) => setTechForm({ ...techForm, name: e.target.value })} required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tech-email">Email</Label>
-                          <Input id="tech-email" type="email" placeholder="tech@example.com" value={techForm.email}
-                            onChange={(e) => setTechForm({ ...techForm, email: e.target.value })} required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tech-phone">Phone</Label>
-                          <Input id="tech-phone" type="tel" placeholder="+91 98765 43210" value={techForm.phone}
-                            onChange={(e) => setTechForm({ ...techForm, phone: e.target.value })} required />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="tech-password">Temporary Password</Label>
-                          <Input id="tech-password" type="password" placeholder="Min 6 characters" value={techForm.password}
-                            onChange={(e) => setTechForm({ ...techForm, password: e.target.value })} required minLength={6} />
+                          <Label>Select User</Label>
+                          <Select value={selectedUserIdForTech} onValueChange={setSelectedUserIdForTech}>
+                            <SelectTrigger><SelectValue placeholder="Select a user" /></SelectTrigger>
+                            <SelectContent>
+                              {users.map((u) => (
+                                <SelectItem key={u.id} value={u.id}>{u.full_name} ({u.phone ?? "No phone"})</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-2">
                           <Label>Specialization</Label>
-                          <Select value={techForm.specialization} onValueChange={(v) => setTechForm({ ...techForm, specialization: v })}>
+                          <Select value={specializationForTech} onValueChange={setSpecializationForTech}>
                             <SelectTrigger><SelectValue placeholder="Select specialization" /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="Laptop Repair">Laptop Repair</SelectItem>
@@ -328,7 +323,7 @@ export function AdminDashboard() {
                           </Select>
                         </div>
                         <Button type="submit" className="w-full" disabled={addingTech}>
-                          {addingTech ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Adding...</> : "Add Technician"}
+                          {addingTech ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Promoting...</> : "Promote to Technician"}
                         </Button>
                       </form>
                     </DialogContent>

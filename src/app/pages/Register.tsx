@@ -61,7 +61,7 @@ export function Register() {
               <Wrench className="w-10 h-10 text-blue-600" />
             </div>
             <div className="text-left">
-              <span className="text-3xl font-bold text-white block">Smart Tech Service</span>
+              <span className="text-3xl font-bold text-white block">Smart Tech Service Portal</span>
               <span className="text-blue-200 text-sm flex items-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Your Tech Partner
