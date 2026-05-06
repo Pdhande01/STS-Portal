@@ -6,7 +6,7 @@ import { Input } from "./ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 
 const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
-const OPENROUTER_MODEL = "google/gemini-2.0-flash-exp:free";
+const OPENROUTER_MODEL = "google/gemma-3-27b-it:free";
 const SYSTEM_PROMPT = "You are Techsathi, an AI assistant for the Smart Tech Service Portal (STS). You help customers with computer repair advice, laptop maintenance, booking services, tracking orders, and general tech queries. Keep responses concise, friendly, and helpful. Avoid markdown formatting."
 
 type Message = {

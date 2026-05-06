@@ -385,11 +385,19 @@ export function Home() {
             </div>
             <div>
               <h4 className="font-bold mb-4">Contact Us</h4>
-              <p className="text-gray-400 text-sm">
-                123 Tech Avenue, Silicon Valley<br />
-                San Francisco, CA 94107<br />
-                Phone: +1 (555) 123-4567
+              <p className="text-gray-400 text-sm leading-relaxed">
+                E Square, E82, 12 No Bus Stop<br />
+                Arera Colony, Bhopal<br />
+                Madhya Pradesh – 462039
               </p>
+              <a
+                href="https://maps.google.com/?q=E+Square+E82+12+No+Bus+Stop+Arera+Colony+Bhopal+Madhya+Pradesh+462039"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1 text-blue-400 hover:text-blue-300 text-sm mt-2 transition-colors"
+              >
+                📍 View on Google Maps
+              </a>
             </div>
           </div>
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
