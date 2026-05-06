@@ -315,9 +315,9 @@ export function Home() {
           
           <div className="grid md:grid-cols-3 gap-8">
             {[
-              { name: "Sarah Johnson", role: "Business Owner", rating: 5, text: "Excellent service! My laptop was repaired in just 2 hours. Highly recommend!" },
-              { name: "Michael Chen", role: "Freelancer", rating: 5, text: "Professional technicians and great prices. The online shop has everything I need." },
-              { name: "Emily Davis", role: "Student", rating: 5, text: "Fast, reliable, and affordable. They saved my thesis when my laptop crashed!" }
+            { name: "Priya Sharma", role: "Business Owner", rating: 5, text: "Excellent service! My laptop was repaired in just 2 hours. Highly recommend!" },
+              { name: "Rahul Verma", role: "Freelancer", rating: 5, text: "Professional technicians and great prices. The online shop has everything I need." },
+              { name: "Anjali Patel", role: "Student", rating: 5, text: "Fast, reliable, and affordable. They saved my thesis when my laptop crashed!" }
             ].map((testimonial, idx) => (
               <Card key={idx} className="border-2 hover:shadow-xl transition-all">
                 <CardHeader>
