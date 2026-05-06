@@ -4,7 +4,10 @@ import { Button } from "./ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Input } from "./ui/input";
 import { motion, AnimatePresence } from "framer-motion";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+
+const OPENROUTER_API_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
+const OPENROUTER_MODEL = "google/gemini-2.0-flash-exp:free";
+const SYSTEM_PROMPT = "You are Techsathi, an AI assistant for the Smart Tech Service Portal (STS). You help customers with computer repair advice, laptop maintenance, booking services, tracking orders, and general tech queries. Keep responses concise, friendly, and helpful. Avoid markdown formatting."
 
 type Message = {
   id: string;
@@ -13,12 +16,10 @@ type Message = {
   feedback?: "up" | "down";
 };
 
-const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
-const model = genAI ? genAI.getGenerativeModel({ 
-  model: "gemini-2.5-flash",
-  systemInstruction: "You are Smart Tech Service Portal, an AI assistant for the Smart Tech Service Portal. You help customers with computer repair advice, laptop maintenance, and answering basic tech queries. Keep responses concise, friendly, helpful, and without markdown formatting if possible."
-}) : null;
+type OpenRouterMessage = {
+  role: "system" | "user" | "assistant";
+  content: string;
+};
 
 export function AIChatBot() {
   const [isOpen, setIsOpen] = useState(false);
@@ -33,26 +34,8 @@ export function AIChatBot() {
   const [inputText, setInputText] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
   
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const chatSessionRef = useRef<any>(null);
-
-  // Initialize Chat Session
-  useEffect(() => {
-    if (model && !chatSessionRef.current) {
-      chatSessionRef.current = model.startChat({
-        history: [
-          {
-            role: "user",
-            parts: [{ text: "Hello" }],
-          },
-          {
-            role: "model",
-            parts: [{ text: "Hi! I'm Smart Tech Service Portal. Ask me about laptop maintenance, performance issues, or general tech advice!" }],
-          },
-        ],
-      });
-    }
-  }, []);
+  // Conversation history sent to OpenRouter on each request
+  const historyRef = useRef<OpenRouterMessage[]>([]);
 
   // Auto-scroll to bottom when messages update
   useEffect(() => {
@@ -72,44 +55,70 @@ export function AIChatBot() {
   const handleSend = async () => {
     if (!inputText.trim()) return;
 
+    const userText = inputText.trim();
     const userMessage: Message = {
       id: Date.now().toString(),
       sender: "user",
-      text: inputText,
+      text: userText,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInputText("");
 
-    if (!model || !chatSessionRef.current) {
-      setIsTyping(true);
-      setTimeout(() => {
-        setMessages((prev) => [...prev, {
-          id: (Date.now() + 1).toString(),
-          sender: "ai",
-          text: "⚠️ Gemini API key is missing! Please add your VITE_GEMINI_API_KEY to the .env file and restart the server.",
-        }]);
-        setIsTyping(false);
-      }, 500);
-      return;
-    }
-
-    setIsTyping(true);
-    try {
-      const result = await chatSessionRef.current.sendMessage(userMessage.text);
-      const responseText = result.response.text();
+    if (!OPENROUTER_API_KEY) {
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         sender: "ai",
-        text: responseText,
+        text: "⚠️ OpenRouter API key is missing! Please add VITE_OPENROUTER_API_KEY to your .env file and restart the server.",
+      }]);
+      return;
+    }
+
+    // Append user turn to history
+    historyRef.current.push({ role: "user", content: userText });
+
+    setIsTyping(true);
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": window.location.origin,
+          "X-Title": "Smart Tech Service Portal",
+        },
+        body: JSON.stringify({
+          model: OPENROUTER_MODEL,
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            ...historyRef.current,
+          ],
+        }),
+      });
+
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData?.error?.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const assistantText: string = data.choices?.[0]?.message?.content ?? "No response received.";
+
+      // Append assistant turn to history
+      historyRef.current.push({ role: "assistant", content: assistantText });
+
+      setMessages((prev) => [...prev, {
+        id: (Date.now() + 1).toString(),
+        sender: "ai",
+        text: assistantText,
       }]);
     } catch (error: unknown) {
-      console.error("Gemini API Error:", error);
+      console.error("OpenRouter API Error:", error);
       const errMsg = error instanceof Error ? error.message : "Unknown error";
       setMessages((prev) => [...prev, {
         id: (Date.now() + 1).toString(),
         sender: "ai",
-        text: "Sorry, I encountered an error communicating with the AI server. " + errMsg,
+        text: "Sorry, I encountered an error: " + errMsg,
       }]);
     } finally {
       setIsTyping(false);

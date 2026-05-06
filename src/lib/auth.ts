@@ -15,6 +15,7 @@ export async function signUp(
     password,
     options: {
       data: { full_name: fullName, phone, role },
+      emailRedirectTo: `${window.location.origin}/login`,
     },
   })
   if (error) throw error
