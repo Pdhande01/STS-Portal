@@ -9,7 +9,13 @@ import { TrackService } from "./pages/user/TrackService";
 import { Shop } from "./pages/user/Shop";
 import { OrderProducts } from "./pages/user/OrderProducts";
 import { TechnicianDashboard } from "./pages/technician/TechnicianDashboard";
-import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { AdminLayout } from "./pages/admin/AdminLayout";
+import { AdminOverview } from "./pages/admin/AdminOverview";
+import { AdminUsers } from "./pages/admin/AdminUsers";
+import { AdminTechnicians } from "./pages/admin/AdminTechnicians";
+import { AdminServices } from "./pages/admin/AdminServices";
+import { AdminOrders } from "./pages/admin/AdminOrders";
+import { AdminProducts } from "./pages/admin/AdminProducts";
 import { NotFound } from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -46,8 +52,16 @@ export const router = createBrowserRouter([
         element: <ProtectedRoute role="technician"><TechnicianDashboard /></ProtectedRoute>,
       },
       {
-        path: "admin/dashboard",
-        element: <ProtectedRoute role="admin"><AdminDashboard /></ProtectedRoute>,
+        path: "admin",
+        element: <ProtectedRoute role="admin"><AdminLayout /></ProtectedRoute>,
+        children: [
+          { index: true, path: "dashboard", element: <AdminOverview /> },
+          { path: "users", element: <AdminUsers /> },
+          { path: "technicians", element: <AdminTechnicians /> },
+          { path: "services", element: <AdminServices /> },
+          { path: "orders", element: <AdminOrders /> },
+          { path: "products", element: <AdminProducts /> },
+        ],
       },
       { path: "*", Component: NotFound },
     ],

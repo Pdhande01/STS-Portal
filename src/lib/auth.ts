@@ -30,6 +30,29 @@ export async function signIn(email: string, password: string) {
   return data
 }
 
+// ─── Sign In with Email OTP ───────────────────────────────────────────────────
+
+export async function signInWithEmailOtp(email: string) {
+  const { data, error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: false, // Ensure user exists if logging in, or set to true for signless registration
+    },
+  })
+  if (error) throw error
+  return data
+}
+
+export async function verifyEmailOtp(email: string, token: string) {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email',
+  })
+  if (error) throw error
+  return data
+}
+
 // ─── Sign Out ─────────────────────────────────────────────────────────────────
 
 export async function signOut() {

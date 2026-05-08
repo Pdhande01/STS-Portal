@@ -99,3 +99,41 @@ export async function getAdminStats() {
     monthlyRevenue: totalRevenue,
   }
 }
+
+// ─── Get All Orders ───────────────────────────────────────────────────────────
+
+export async function getAllOrders() {
+  const { data, error } = await supabase
+    .from('orders')
+    .select(`
+      *,
+      profiles (
+        full_name,
+        phone
+      ),
+      order_items (
+        *,
+        products (
+          name
+        )
+      )
+    `)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data
+}
+
+// ─── Update Order Status ──────────────────────────────────────────────────────
+
+export async function updateOrderStatus(orderId: string, status: string) {
+  const { data, error } = await supabase
+    .from('orders')
+    .update({ status })
+    .eq('id', orderId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
