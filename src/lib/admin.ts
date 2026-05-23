@@ -15,6 +15,28 @@ export async function getAllUsers(): Promise<Profile[]> {
   return data as Profile[]
 }
 
+// ─── Delete User Profile ──────────────────────────────────────────────────────
+
+export async function deleteUser(userId: string): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .delete()
+    .eq('id', userId)
+
+  if (error) throw error
+}
+
+// ─── Update User Status (Restrict/Active) ─────────────────────────────────────
+
+export async function updateUserStatus(userId: string, status: 'active' | 'suspended'): Promise<void> {
+  const { error } = await supabase
+    .from('profiles')
+    .update({ status })
+    .eq('id', userId)
+
+  if (error) throw error
+}
+
 // ─── Get All Technicians ──────────────────────────────────────────────────────
 
 export async function getAllTechnicians(): Promise<Profile[]> {
@@ -43,6 +65,23 @@ export async function promoteToTechnician(
       specialization 
     })
     .eq('id', userId)
+    .select()
+    .single()
+
+  if (error) throw error
+  return data
+}
+
+// ─── Demote Technician back to User ──────────────────────────────────────────
+
+export async function demoteTechnician(techId: string) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ 
+      role: 'user',
+      specialization: null 
+    })
+    .eq('id', techId)
     .select()
     .single()
 

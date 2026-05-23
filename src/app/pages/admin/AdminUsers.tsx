@@ -1,11 +1,17 @@
 import { useEffect, useState } from "react";
-import { Users, Mail, Phone, Calendar, MoreVertical, Search, Filter } from "lucide-react";
+import { Users, Mail, Phone, Calendar, MoreVertical, Search, Filter, Trash2, Ban, UserCheck } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Badge } from "../../components/ui/badge";
 import { Input } from "../../components/ui/input";
 import { Button } from "../../components/ui/button";
-import { getAllUsers } from "../../../lib/admin";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "../../components/ui/dropdown-menu";
+import { getAllUsers, deleteUser, updateUserStatus } from "../../../lib/admin";
 import type { Profile } from "../../../lib/supabase";
 import { Loader2 } from "lucide-react";
 
@@ -32,6 +38,37 @@ export function AdminUsers() {
     u.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.phone?.includes(searchTerm)
   );
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm("Are you sure you want to delete this customer? All their associated data will remain but their profile will be removed.")) {
+      return;
+    }
+    
+    try {
+      await deleteUser(userId);
+      setUsers(users.filter(u => u.id !== userId));
+    } catch (err) {
+      console.error("Failed to delete user:", err);
+      alert("Failed to delete user profile.");
+    }
+  };
+
+  const handleToggleStatus = async (user: Profile) => {
+    const newStatus = user.status === 'suspended' ? 'active' : 'suspended';
+    const actionText = newStatus === 'suspended' ? 'suspend' : 'reactivate';
+    
+    if (!window.confirm(`Are you sure you want to ${actionText} this customer?`)) {
+      return;
+    }
+
+    try {
+      await updateUserStatus(user.id, newStatus);
+      setUsers(users.map(u => u.id === user.id ? { ...u, status: newStatus } : u));
+    } catch (err) {
+      console.error(err);
+      alert(`Failed to ${actionText} user.`);
+    }
+  };
 
   if (loading) {
     return (
@@ -116,14 +153,49 @@ export function AdminUsers() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                          Active
-                        </Badge>
+                        {user.status === "suspended" ? (
+                          <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                            Suspended
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                            Active
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem 
+                              className={user.status === "suspended" ? "text-green-600 focus:bg-green-50 focus:text-green-700 cursor-pointer" : "text-amber-600 focus:bg-amber-50 focus:text-amber-700 cursor-pointer"}
+                              onSelect={() => handleToggleStatus(user)}
+                            >
+                              {user.status === "suspended" ? (
+                                <>
+                                  <UserCheck className="w-4 h-4 mr-2" />
+                                  Reactivate User
+                                </>
+                              ) : (
+                                <>
+                                  <Ban className="w-4 h-4 mr-2" />
+                                  Suspend User
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="text-red-600 focus:bg-red-50 focus:text-red-700 cursor-pointer"
+                              onSelect={() => handleDeleteUser(user.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Customer
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))

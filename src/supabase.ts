@@ -1,18 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
+import { mockSupabase } from './mockSupabase'
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn(
-    '⚠️ Missing Supabase environment variables.\n' +
-    'Create a .env file in the project root with:\n' +
-    '  VITE_SUPABASE_URL=https://your-project.supabase.co\n' +
-    '  VITE_SUPABASE_ANON_KEY=your-anon-key-here'
-  )
+const useMock = 
+  !supabaseUrl || 
+  supabaseUrl.includes('placeholder.supabase.co') || 
+  supabaseUrl.includes('vwheljeudaasvfgumzrt.supabase.co') ||
+  import.meta.env.VITE_USE_MOCK_SUPABASE === 'true';
+
+if (useMock) {
+  console.info(
+    '🔌 [STS-Portal] Running in client-side MOCK mode because the Supabase URL ' +
+    'is missing, placeholder, or unreachable.\n' +
+    'Profiles, products, services, and orders will persist locally in localStorage.'
+  );
 }
 
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
-)
+export const supabase = useMock
+  ? (mockSupabase as any)
+  : createClient(supabaseUrl, supabaseAnonKey);
+

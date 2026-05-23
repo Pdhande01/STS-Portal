@@ -12,6 +12,7 @@ export interface Profile {
   role: UserRole
   specialization: string | null
   created_at: string
+  status?: 'active' | 'suspended'
 }
 
 export interface ServiceRequest {

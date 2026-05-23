@@ -104,6 +104,17 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
   return data as Product
 }
 
+// ─── Admin: Delete Product ────────────────────────────────────────────────────
+
+export async function deleteProduct(productId: string): Promise<void> {
+  const { error } = await supabase
+    .from('products')
+    .delete()
+    .eq('id', productId)
+
+  if (error) throw error
+}
+
 // ─── Admin: Get All Orders ────────────────────────────────────────────────────
 
 export async function getAllOrders(): Promise<Order[]> {

@@ -12,7 +12,7 @@ import {
   InputOTPSlot 
 } from "../components/ui/input-otp";
 
-import { signInWithEmailOtp, verifyEmailOtp, getProfile } from "../../lib/auth";
+import { signInWithEmailOtp, verifyEmailOtp, getProfile, signOut } from "../../lib/auth";
 
 type LoginStep = "email" | "otp";
 
@@ -52,6 +52,11 @@ export function Login() {
 
       const profile = await getProfile(user.id);
       if (!profile) throw new Error("Profile not found. Please register first.");
+
+      if (profile.status === "suspended") {
+        await signOut();
+        throw new Error("Your account has been suspended by an administrator.");
+      }
 
       if (profile.role === "admin") navigate("/admin/dashboard");
       else if (profile.role === "technician") navigate("/technician/dashboard");

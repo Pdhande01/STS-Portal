@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { UserCog, Plus, Phone, Award, Mail, ExternalLink, Loader2 } from "lucide-react";
+import { UserCog, Plus, Phone, Award, Mail, ExternalLink, Loader2, MoreVertical, UserMinus, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Badge } from "../../components/ui/badge";
@@ -7,7 +7,13 @@ import { Button } from "../../components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
 import { Label } from "../../components/ui/label";
-import { getAllTechnicians, getAllUsers, promoteToTechnician } from "../../../lib/admin";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "../../components/ui/dropdown-menu";
+import { getAllTechnicians, getAllUsers, promoteToTechnician, demoteTechnician, deleteUser } from "../../../lib/admin";
 import type { Profile } from "../../../lib/supabase";
 
 export function AdminTechnicians() {
@@ -52,6 +58,32 @@ export function AdminTechnicians() {
       alert("Failed to promote technician.");
     } finally {
       setPromoting(false);
+    }
+  };
+
+  const handleDemote = async (techId: string) => {
+    if (!window.confirm("Are you sure you want to demote this technician back to a standard user?")) {
+      return;
+    }
+    try {
+      await demoteTechnician(techId);
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to demote technician.");
+    }
+  };
+
+  const handleDeleteTech = async (techId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this technician profile?")) {
+      return;
+    }
+    try {
+      await deleteUser(techId);
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete technician.");
     }
   };
 
@@ -134,9 +166,34 @@ export function AdminTechnicians() {
                 <div className="w-12 h-12 rounded-2xl bg-purple-100 flex items-center justify-center text-purple-700 font-bold border border-purple-200 shadow-sm">
                   <UserCog className="w-6 h-6" />
                 </div>
-                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100">
-                  Technician
-                </Badge>
+                <div className="flex items-center gap-1">
+                  <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-100">
+                    Technician
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-600 rounded-lg">
+                        <MoreVertical className="w-4 h-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-44">
+                      <DropdownMenuItem 
+                        className="cursor-pointer text-orange-600 focus:bg-orange-50 focus:text-orange-700"
+                        onClick={() => handleDemote(tech.id)}
+                      >
+                        <UserMinus className="w-4 h-4 mr-2" />
+                        Demote to User
+                      </DropdownMenuItem>
+                      <DropdownMenuItem 
+                        className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700"
+                        onClick={() => handleDeleteTech(tech.id)}
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Delete Profile
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
               <CardTitle className="mt-4 text-xl">{tech.full_name}</CardTitle>
               <CardDescription className="flex items-center gap-1.5 mt-1">

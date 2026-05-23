@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Package, Plus, Search, Tag, Database, MoreHorizontal, Loader2, Image as ImageIcon } from "lucide-react";
+import { Package, Plus, Search, Tag, Database, MoreHorizontal, Loader2, Image as ImageIcon, Trash2, Edit3, Sparkles } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Badge } from "../../components/ui/badge";
@@ -8,7 +8,13 @@ import { Input } from "../../components/ui/input";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
 import { Label } from "../../components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
-import { getProducts, addProduct } from "../../../lib/products";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "../../components/ui/dropdown-menu";
+import { getProducts, addProduct, updateProduct, deleteProduct } from "../../../lib/products";
 import type { Product } from "../../../lib/supabase";
 
 export function AdminProducts() {
@@ -58,6 +64,49 @@ export function AdminProducts() {
       alert("Failed to add product.");
     } finally {
       setAdding(false);
+    }
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!window.confirm("Are you sure you want to delete this product from the inventory?")) {
+      return;
+    }
+    try {
+      await deleteProduct(productId);
+      setProducts(products.filter(p => p.id !== productId));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete product.");
+    }
+  };
+
+  const handleEditStock = async (product: Product) => {
+    const newStockStr = window.prompt(`Enter new stock quantity for ${product.name}:`, product.stock.toString());
+    if (newStockStr === null) return;
+    
+    const newStock = parseInt(newStockStr);
+    if (isNaN(newStock) || newStock < 0) {
+      alert("Please enter a valid non-negative number.");
+      return;
+    }
+
+    try {
+      await updateProduct(product.id, { stock: newStock });
+      setProducts(products.map(p => p.id === product.id ? { ...p, stock: newStock } : p));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update stock quantity.");
+    }
+  };
+
+  const handleToggleTrending = async (product: Product) => {
+    const updatedTrending = !product.trending;
+    try {
+      await updateProduct(product.id, { trending: updatedTrending });
+      setProducts(products.map(p => p.id === product.id ? { ...p, trending: updatedTrending } : p));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update product featured status.");
     }
   };
 
@@ -196,9 +245,36 @@ export function AdminProducts() {
                         </div>
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600 rounded-lg">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-44">
+                            <DropdownMenuItem 
+                              className="cursor-pointer text-gray-700 focus:bg-gray-50"
+                              onSelect={() => handleEditStock(p)}
+                            >
+                              <Edit3 className="w-4 h-4 mr-2" />
+                              Update Stock
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className={p.trending ? "cursor-pointer text-yellow-600 focus:bg-yellow-50 focus:text-yellow-700" : "cursor-pointer text-gray-700 focus:bg-gray-50"}
+                              onSelect={() => handleToggleTrending(p)}
+                            >
+                              <Sparkles className="w-4 h-4 mr-2" />
+                              {p.trending ? "Remove Featured" : "Make Featured"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700"
+                              onSelect={() => handleDeleteProduct(p.id)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Delete Product
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </TableCell>
                     </TableRow>
                   ))
