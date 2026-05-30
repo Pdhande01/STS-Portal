@@ -19,6 +19,7 @@ export function UserDashboard() {
   const [services, setServices] = useState<ServiceRequest[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedInvoice, setSelectedInvoice] = useState<Order | null>(null);
 
   // Profile Settings state
   const [profileOpen, setProfileOpen] = useState(false);
@@ -100,6 +101,142 @@ export function UserDashboard() {
     } finally {
       setUpdating(false);
     }
+  };
+
+  const handlePrint = (order: Order) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Please allow popups to print/download the invoice.");
+      return;
+    }
+
+    const itemsHtml = order.order_items?.map((item) => `
+      <tr style="border-bottom: 1px solid #e2e8f0;">
+        <td style="padding: 12px 0; font-size: 14px; color: #1e293b;">${item.products?.name ?? 'Unknown Component'}</td>
+        <td style="padding: 12px 0; text-align: center; font-size: 14px; color: #475569;">${item.quantity}</td>
+        <td style="padding: 12px 0; text-align: right; font-size: 14px; color: #475569;">₹${item.price_at_purchase.toLocaleString()}</td>
+        <td style="padding: 12px 0; text-align: right; font-size: 14px; font-weight: 600; color: #0f172a;">₹${(item.quantity * item.price_at_purchase).toLocaleString()}</td>
+      </tr>
+    `).join("") || "";
+
+    const invoiceDate = new Date(order.created_at).toLocaleDateString("en-IN", {
+      year: "numeric", month: "long", day: "numeric"
+    });
+
+    const taxAmount = order.total_amount * 0.18;
+    const subtotal = order.total_amount - taxAmount;
+
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Invoice #${order.id.slice(0, 8).toUpperCase()}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; color: #0f172a; padding: 40px; margin: 0; line-height: 1.5; }
+            .container { max-width: 800px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #e2e8f0; padding-bottom: 30px; margin-bottom: 30px; }
+            .logo-section { display: flex; align-items: center; gap: 12px; }
+            .logo-text { font-size: 22px; font-weight: 800; background: linear-gradient(to right, #2563eb, #7c3aed); -webkit-background-clip: text; color: #2563eb; }
+            .invoice-details { text-align: right; }
+            .title { font-size: 28px; font-weight: 800; text-transform: uppercase; color: #1e3a8a; margin: 0 0 10px 0; letter-spacing: 0.05em; }
+            .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 40px; margin-bottom: 40px; }
+            .section-title { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.05em; margin-bottom: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
+            .details-text { font-size: 14px; color: #334155; margin: 0 0 6px 0; }
+            table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+            th { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; text-align: left; padding: 12px 0; border-bottom: 2px solid #cbd5e1; }
+            .summary-table { width: 300px; margin-left: auto; margin-top: 20px; }
+            .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 14px; }
+            .summary-total { font-size: 18px; font-weight: 800; color: #1e3a8a; border-top: 2px solid #2563eb; padding-top: 12px; margin-top: 8px; }
+            .footer { border-top: 1px dashed #cbd5e1; margin-top: 60px; padding-top: 20px; text-align: center; font-size: 12px; color: #64748b; }
+            .barcode-section { margin-top: 30px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+            .barcode { width: 220px; height: 40px; background: repeating-linear-gradient(90deg, #000, #000 2px, #fff 2px, #fff 8px); }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo-section">
+                <span class="logo-text">SMART TECH SERVICE</span>
+              </div>
+              <div class="invoice-details">
+                <h1 class="title">Invoice</h1>
+                <p class="details-text"><strong>Invoice ID:</strong> INV-${order.id.slice(0, 8).toUpperCase()}</p>
+                <p class="details-text"><strong>Date:</strong> ${invoiceDate}</p>
+                <p class="details-text"><strong>Payment Method:</strong> Cash on Delivery</p>
+                <p class="details-text"><strong>Status:</strong> ${order.status}</p>
+              </div>
+            </div>
+
+            <div class="meta-grid">
+              <div>
+                <h3 class="section-title">Supplier Details</h3>
+                <p class="details-text"><strong>Smart Tech Service Portal</strong></p>
+                <p class="details-text">Plot No. 42, Tech Park, Main Street</p>
+                <p class="details-text">Mumbai, Maharashtra, 400001</p>
+                <p class="details-text">Email: support@smarttech.com</p>
+                <p class="details-text">Phone: +91 99999 99999</p>
+              </div>
+              <div>
+                <h3 class="section-title">Recipient Details</h3>
+                <p class="details-text"><strong>${profile?.full_name ?? "Customer"}</strong></p>
+                <p class="details-text">Phone: ${profile?.phone ?? "No phone"}</p>
+                <p class="details-text"><strong>Shipping Address:</strong></p>
+                <p class="details-text" style="white-space: pre-line;">${order.delivery_address ?? "Not specified"}</p>
+              </div>
+            </div>
+
+            <table>
+              <thead>
+                <tr>
+                  <th style="width: 50%;">Description</th>
+                  <th style="width: 15%; text-align: center;">Qty</th>
+                  <th style="width: 15%; text-align: right;">Unit Price</th>
+                  <th style="width: 20%; text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${itemsHtml}
+              </tbody>
+            </table>
+
+            <div class="summary-table">
+              <div class="summary-row">
+                <span style="color: #64748b;">Subtotal (excl. Tax)</span>
+                <span>₹${subtotal.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+              <div class="summary-row">
+                <span style="color: #64748b;">GST (18% Included)</span>
+                <span>₹${taxAmount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+              <div class="summary-row">
+                <span style="color: #64748b;">Shipping Fee</span>
+                <span>₹0.00</span>
+              </div>
+              <div class="summary-row summary-total">
+                <span>Grand Total</span>
+                <span>₹${order.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+              </div>
+            </div>
+
+            <div class="barcode-section">
+              <div class="barcode"></div>
+              <span style="font-family: monospace; font-size: 10px; letter-spacing: 2px;">*INV-${order.id.slice(0, 8).toUpperCase()}*</span>
+            </div>
+
+            <div class="footer">
+              <p>Thank you for shopping with Smart Tech Service Portal!</p>
+              <p>This is a computer-generated invoice and requires no physical signature.</p>
+            </div>
+          </div>
+          <script>
+            window.onload = function() {
+              window.print();
+            }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const activeServices = services.filter(s => s.status !== "Completed" && s.status !== "Cancelled");
@@ -413,7 +550,12 @@ export function UserDashboard() {
                           )}
                           <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
                         </div>
-                        <Button variant="outline">Track Order</Button>
+                        <div className="flex gap-2">
+                          <Button variant="outline" className="border-purple-200 text-purple-700 hover:bg-purple-50" onClick={() => setSelectedInvoice(order)}>
+                            Invoice
+                          </Button>
+                          <Button variant="outline">Track Order</Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -423,6 +565,102 @@ export function UserDashboard() {
           </>
         )}
       </div>
+
+      {/* Invoice Details Dialog */}
+      {selectedInvoice && (
+        <Dialog open={!!selectedInvoice} onOpenChange={(open) => !open && setSelectedInvoice(null)}>
+          <DialogContent className="max-w-2xl bg-white p-6 rounded-2xl shadow-2xl border-none">
+            <DialogHeader className="border-b pb-4 mb-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Invoice Summary
+                  </DialogTitle>
+                  <DialogDescription className="text-sm">
+                    Order ID: #{selectedInvoice.id.slice(0, 8).toUpperCase()}
+                  </DialogDescription>
+                </div>
+                <Badge className={selectedInvoice.status === "Delivered" ? "bg-green-500" : "bg-blue-500"}>
+                  {selectedInvoice.status}
+                </Badge>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="grid grid-cols-2 gap-6 text-sm">
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-gray-500 uppercase text-xs tracking-wider">Merchant</h4>
+                  <p className="font-medium text-gray-900">Smart Tech Service Portal</p>
+                  <p className="text-gray-600">Plot No. 42, Tech Park, Main Street</p>
+                  <p className="text-gray-600">Mumbai, Maharashtra, 400001</p>
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-gray-500 uppercase text-xs tracking-wider">Ship To</h4>
+                  <p className="font-medium text-gray-900">{profile?.full_name}</p>
+                  <p className="text-gray-600">{profile?.phone}</p>
+                  <p className="text-gray-600 italic whitespace-pre-line">{selectedInvoice.delivery_address ?? "Not specified"}</p>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="border rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
+                    <tr>
+                      <th className="py-2.5 px-4 text-left">Product</th>
+                      <th className="py-2.5 px-4 text-center">Qty</th>
+                      <th className="py-2.5 px-4 text-right">Price</th>
+                      <th className="py-2.5 px-4 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-gray-800">
+                    {selectedInvoice.order_items?.map((item) => (
+                      <tr key={item.id}>
+                        <td className="py-3 px-4 text-left font-medium">{item.products?.name ?? 'Unknown Component'}</td>
+                        <td className="py-3 px-4 text-center">{item.quantity}</td>
+                        <td className="py-3 px-4 text-right">₹{item.price_at_purchase.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-semibold">₹{(item.quantity * item.price_at_purchase).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Summaries */}
+              <div className="w-80 ml-auto space-y-2 text-sm pt-2">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal (excluding Tax)</span>
+                  <span>₹{(selectedInvoice.total_amount - (selectedInvoice.total_amount * 0.18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>GST (18% Included)</span>
+                  <span>₹{(selectedInvoice.total_amount * 0.18).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div className="flex justify-between text-gray-600 border-b pb-2">
+                  <span>Shipping Fee</span>
+                  <span>₹0.00</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold text-gray-900 pt-1">
+                  <span>Grand Total</span>
+                  <span className="text-blue-600">₹{selectedInvoice.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 mt-6 flex justify-end gap-3">
+              <Button variant="outline" onClick={() => setSelectedInvoice(null)}>
+                Close
+              </Button>
+              <Button
+                className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                onClick={() => handlePrint(selectedInvoice)}
+              >
+                Print / Save PDF
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
