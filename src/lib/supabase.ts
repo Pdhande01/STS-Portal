@@ -64,6 +64,7 @@ export interface Order {
   user_id: string
   total_amount: number
   status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled'
+  delivery_address?: string | null
   created_at: string
   order_items?: OrderItem[]
 }

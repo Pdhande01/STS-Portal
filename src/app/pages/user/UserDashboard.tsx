@@ -1,12 +1,16 @@
 import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { Home, Package, Wrench, ShoppingCart, Star, LogOut, TrendingUp, Activity, Loader2 } from "lucide-react";
+import { Home, Package, Wrench, ShoppingCart, Star, LogOut, TrendingUp, Activity, Loader2, User as UserIcon } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "../../components/ui/dialog";
+import { Label } from "../../components/ui/label";
+import { Input } from "../../components/ui/input";
 import { useAuth } from "../../../contexts/AuthContext";
 import { getUserServiceRequests } from "../../../lib/services";
 import { getUserOrders } from "../../../lib/products";
+import { updateAccountDetails } from "../../../lib/auth";
 import type { ServiceRequest, Order } from "../../../lib/supabase";
 
 export function UserDashboard() {
@@ -16,6 +20,17 @@ export function UserDashboard() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Profile Settings state
+  const [profileOpen, setProfileOpen] = useState(false);
+  const [updating, setUpdating] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    phone: "",
+    password: "",
+    confirmPassword: ""
+  });
+
+  // Load user data
   useEffect(() => {
     async function loadData() {
       try {
@@ -34,9 +49,57 @@ export function UserDashboard() {
     loadData();
   }, []);
 
+  // Update form inputs when profile changes
+  useEffect(() => {
+    if (profile) {
+      setForm({
+        name: profile.full_name || "",
+        phone: profile.phone || "",
+        password: "",
+        confirmPassword: ""
+      });
+    }
+  }, [profile]);
+
   const handleLogout = async () => {
     await signOut();
     navigate("/");
+  };
+
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.phone) {
+      alert("Name and Phone Number are required.");
+      return;
+    }
+    if (form.password && form.password !== form.confirmPassword) {
+      alert("Passwords do not match.");
+      return;
+    }
+    if (form.password && form.password.length < 6) {
+      alert("Password must be at least 6 characters.");
+      return;
+    }
+
+    setUpdating(true);
+    try {
+      await updateAccountDetails(
+        profile!.id,
+        form.name,
+        form.phone,
+        form.password || undefined
+      );
+      
+      alert("Profile updated successfully!");
+      setProfileOpen(false);
+      setForm(prev => ({ ...prev, password: "", confirmPassword: "" }));
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert(err instanceof Error ? err.message : "Failed to update profile.");
+    } finally {
+      setUpdating(false);
+    }
   };
 
   const activeServices = services.filter(s => s.status !== "Completed" && s.status !== "Cancelled");
@@ -67,12 +130,76 @@ export function UserDashboard() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <div className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-lg border border-blue-200">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
-                {initials}
-              </div>
-              <span className="text-sm font-medium text-gray-700">{profile?.full_name ?? "User"}</span>
-            </div>
+            <Dialog open={profileOpen} onOpenChange={setProfileOpen}>
+              <DialogTrigger asChild>
+                <div className="hidden md:flex items-center gap-2 bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-2 rounded-lg border border-blue-200 cursor-pointer hover:border-blue-300 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center text-white font-bold text-sm">
+                    {initials}
+                  </div>
+                  <span className="text-sm font-medium text-gray-700">{profile?.full_name ?? "User"}</span>
+                </div>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                  <DialogTitle>Profile Settings</DialogTitle>
+                  <DialogDescription>
+                    Update your account details and security password.
+                  </DialogDescription>
+                </DialogHeader>
+                <form onSubmit={handleUpdateProfile} className="space-y-4 py-2">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input
+                      id="name"
+                      required
+                      value={form.name}
+                      onChange={(e) => setForm({ ...form, name: e.target.value })}
+                      placeholder="Your Full Name"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="phone">Phone Number</Label>
+                    <Input
+                      id="phone"
+                      type="tel"
+                      required
+                      value={form.phone}
+                      onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                      placeholder="Your Phone Number"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password">New Password (Optional)</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={form.password}
+                      onChange={(e) => setForm({ ...form, password: e.target.value })}
+                      placeholder="•••••••• (leave blank to keep current)"
+                    />
+                  </div>
+                  {form.password && (
+                    <div className="space-y-1.5">
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        required
+                        value={form.confirmPassword}
+                        onChange={(e) => setForm({ ...form, confirmPassword: e.target.value })}
+                        placeholder="••••••••"
+                      />
+                    </div>
+                  )}
+                  <div className="pt-3">
+                    <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700" disabled={updating}>
+                      {updating ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Saving...</> : "Save Changes"}
+                    </Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+
             <Button variant="outline" size="sm" className="hover:border-red-500 hover:text-red-500" onClick={handleLogout}>
               <LogOut className="w-4 h-4 mr-2" />
               Logout
@@ -278,7 +405,12 @@ export function UserDashboard() {
                               {order.status}
                             </Badge>
                           </div>
-                          <p className="text-gray-600 mb-1">₹{order.total_amount.toFixed(2)}</p>
+                          <p className="text-gray-600 mb-1 font-semibold">₹{order.total_amount.toFixed(2)}</p>
+                          {order.delivery_address && (
+                            <p className="text-sm text-gray-600 mb-2 italic">
+                              📍 Shipping to: {order.delivery_address}
+                            </p>
+                          )}
                           <p className="text-xs text-gray-500">{new Date(order.created_at).toLocaleDateString()}</p>
                         </div>
                         <Button variant="outline">Track Order</Button>

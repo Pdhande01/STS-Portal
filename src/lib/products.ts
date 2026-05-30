@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Product, Order } from './supabase'
+import { createAuditLog } from './audit'
 
 // ─── Get All Products ─────────────────────────────────────────────────────────
 
@@ -36,7 +37,7 @@ interface CartItem {
   price: number
 }
 
-export async function createOrder(cartItems: CartItem[]): Promise<Order> {
+export async function createOrder(cartItems: CartItem[], deliveryAddress: string): Promise<Order> {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Not authenticated')
 
@@ -45,7 +46,7 @@ export async function createOrder(cartItems: CartItem[]): Promise<Order> {
   // Create the order
   const { data: order, error: orderError } = await supabase
     .from('orders')
-    .insert({ user_id: user.id, total_amount: total })
+    .insert({ user_id: user.id, total_amount: total, delivery_address: deliveryAddress })
     .select()
     .single()
 
@@ -87,7 +88,15 @@ export async function addProduct(product: Omit<Product, 'id' | 'created_at'>): P
     .single()
 
   if (error) throw error
-  return data as Product
+  const newProd = data as Product
+
+  await createAuditLog(
+    'Add Product',
+    `Product: ${newProd.name}`,
+    `Added new inventory item. Category: ${newProd.category}, Price: ₹${newProd.price}, Initial Stock: ${newProd.stock}`
+  )
+
+  return newProd
 }
 
 // ─── Admin: Update Product ────────────────────────────────────────────────────
@@ -101,18 +110,44 @@ export async function updateProduct(id: string, updates: Partial<Product>): Prom
     .single()
 
   if (error) throw error
-  return data as Product
+  const updatedProd = data as Product
+
+  const changes = Object.entries(updates)
+    .map(([k, v]) => `${k} -> ${v}`)
+    .join(', ')
+
+  await createAuditLog(
+    'Update Product',
+    `Product: ${updatedProd.name}`,
+    `Updated fields: ${changes}`
+  )
+
+  return updatedProd
 }
 
 // ─── Admin: Delete Product ────────────────────────────────────────────────────
 
 export async function deleteProduct(productId: string): Promise<void> {
+  // Fetch product name first for logging
+  const { data: prod } = await supabase
+    .from('products')
+    .select('name')
+    .eq('id', productId)
+    .single()
+  const productName = prod?.name || productId
+
   const { error } = await supabase
     .from('products')
     .delete()
     .eq('id', productId)
 
   if (error) throw error
+
+  await createAuditLog(
+    'Delete Product',
+    `Product: ${productName}`,
+    `Deleted product from inventory.`
+  )
 }
 
 // ─── Admin: Get All Orders ────────────────────────────────────────────────────

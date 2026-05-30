@@ -91,3 +91,28 @@ export async function updateProfile(userId: string, updates: Partial<Profile>) {
   if (error) throw error
   return data as Profile
 }
+
+export async function updateAccountDetails(
+  userId: string,
+  fullName: string,
+  phone: string,
+  password?: string
+) {
+  const { error: profileError } = await supabase
+    .from('profiles')
+    .update({ full_name: fullName, phone })
+    .eq('id', userId);
+
+  if (profileError) throw profileError;
+
+  const updateParams: any = {
+    data: { full_name: fullName, phone }
+  };
+  
+  if (password) {
+    updateParams.password = password;
+  }
+
+  const { error: authError } = await supabase.auth.updateUser(updateParams);
+  if (authError) throw authError;
+}

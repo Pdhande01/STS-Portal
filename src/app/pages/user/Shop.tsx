@@ -25,6 +25,7 @@ export function Shop() {
   const [loading, setLoading] = useState(true);
   const [checkingOut, setCheckingOut] = useState(false);
   const [showCart, setShowCart] = useState(false);
+  const [deliveryAddress, setDeliveryAddress] = useState("");
 
   const handleLogout = async () => { await signOut(); navigate("/"); };
 
@@ -61,7 +62,7 @@ export function Shop() {
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0);
 
   const handleCheckout = async () => {
-    if (cart.length === 0) return;
+    if (cart.length === 0 || !deliveryAddress.trim()) return;
     setCheckingOut(true);
     try {
       await createOrder(
@@ -69,9 +70,11 @@ export function Shop() {
           productId: c.product.id,
           quantity: c.quantity,
           price: c.product.price,
-        }))
+        })),
+        deliveryAddress.trim()
       );
       setCart([]);
+      setDeliveryAddress("");
       setShowCart(false);
       alert("Order placed successfully! Check your dashboard for order status.");
       navigate("/user/dashboard");
@@ -164,15 +167,33 @@ export function Shop() {
               )}
             </div>
             {cart.length > 0 && (
-              <div className="p-6 border-t">
-                <div className="flex justify-between mb-4">
+              <div className="p-6 border-t space-y-4">
+                <div className="space-y-2">
+                  <label htmlFor="delivery-address" className="text-xs font-semibold text-gray-700 uppercase tracking-wider block">
+                    Delivery Address *
+                  </label>
+                  <textarea
+                    id="delivery-address"
+                    rows={3}
+                    placeholder="Enter full shipping address with PIN code..."
+                    className="w-full text-sm border-2 rounded-lg p-2.5 outline-none focus:border-blue-500 hover:border-gray-300 transition-all bg-gray-50/50 resize-none font-sans"
+                    value={deliveryAddress}
+                    onChange={(e) => setDeliveryAddress(e.target.value)}
+                  />
+                  {!deliveryAddress.trim() && (
+                    <p className="text-xs text-red-500 font-medium">
+                      Please enter a delivery address to complete order.
+                    </p>
+                  )}
+                </div>
+                <div className="flex justify-between mb-2">
                   <span className="font-bold text-lg">Total</span>
                   <span className="font-bold text-lg text-blue-600">₹{cartTotal.toFixed(2)}</span>
                 </div>
                 <Button
                   className="w-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
                   onClick={handleCheckout}
-                  disabled={checkingOut}
+                  disabled={checkingOut || !deliveryAddress.trim()}
                 >
                   {checkingOut ? (
                     <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Placing Order...</>

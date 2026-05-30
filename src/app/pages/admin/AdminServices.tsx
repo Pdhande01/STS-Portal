@@ -1,15 +1,29 @@
 import { useEffect, useState } from "react";
-import { Wrench, Search, Filter, User, Calendar, MoreHorizontal, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { 
+  Wrench, Search, Filter, User, Calendar, MoreHorizontal, 
+  CheckCircle, Clock, AlertCircle, Loader2, Edit3, Trash2, 
+  ShieldCheck, RefreshCw 
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../../components/ui/select";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "../../components/ui/dropdown-menu";
 import { getAllServiceRequests } from "../../../lib/services";
-import { getAllTechnicians, assignTechnicianToService } from "../../../lib/admin";
+import { 
+  getAllTechnicians, 
+  assignTechnicianToService, 
+  deleteServiceRequest, 
+  adminUpdateServiceRequest 
+} from "../../../lib/admin";
 import type { ServiceRequest, Profile } from "../../../lib/supabase";
-import { Loader2 } from "lucide-react";
 
 export function AdminServices() {
   const [services, setServices] = useState<ServiceRequest[]>([]);
@@ -45,6 +59,48 @@ export function AdminServices() {
     } catch (err) {
       console.error(err);
       alert("Assignment failed.");
+    }
+  };
+
+  const handleDeleteRequest = async (requestId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this service request?")) {
+      return;
+    }
+    try {
+      await deleteServiceRequest(requestId);
+      setServices(services.filter(s => s.id !== requestId));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete service request.");
+    }
+  };
+
+  const handleUpdateStatus = async (requestId: string, status: any) => {
+    try {
+      await adminUpdateServiceRequest(requestId, { status });
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update status.");
+    }
+  };
+
+  const handleUpdateProgress = async (request: ServiceRequest) => {
+    const newProgressStr = window.prompt(`Enter progress percentage (0-100) for ${request.brand} ${request.model}:`, request.progress.toString());
+    if (newProgressStr === null) return;
+
+    const progress = parseInt(newProgressStr);
+    if (isNaN(progress) || progress < 0 || progress > 100) {
+      alert("Please enter a valid percentage between 0 and 100.");
+      return;
+    }
+
+    try {
+      await adminUpdateServiceRequest(request.id, { progress });
+      await loadData();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update progress.");
     }
   };
 
@@ -159,10 +215,10 @@ export function AdminServices() {
                                   ))}
                                 </SelectContent>
                               </Select>
-                              <Button size="sm" className="h-8 px-2 bg-purple-600" onClick={() => handleAssign(s.id)}>
+                              <Button size="sm" className="h-8 px-2 bg-purple-600 cursor-pointer" onClick={() => handleAssign(s.id)}>
                                 <CheckCircle className="w-3 h-3" />
                               </Button>
-                              <Button size="sm" variant="ghost" className="h-8 px-2 text-gray-400" onClick={() => setAssigningId(null)}>
+                              <Button size="sm" variant="ghost" className="h-8 px-2 text-gray-400 cursor-pointer" onClick={() => setAssigningId(null)}>
                                 X
                               </Button>
                             </div>
@@ -177,7 +233,7 @@ export function AdminServices() {
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 h-8 text-xs font-semibold"
+                              className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 h-8 text-xs font-semibold cursor-pointer"
                               onClick={() => setAssigningId(s.id)}
                             >
                               + Assign Tech
@@ -185,9 +241,68 @@ export function AdminServices() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="text-gray-400 hover:text-gray-600 rounded-lg cursor-pointer">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem 
+                                className="cursor-pointer text-gray-700 focus:bg-gray-50"
+                                onClick={() => handleUpdateProgress(s)}
+                              >
+                                <Edit3 className="w-4 h-4 mr-2 text-gray-400" />
+                                Update Progress
+                              </DropdownMenuItem>
+                              
+                              <DropdownMenuItem 
+                                className="cursor-pointer text-gray-700 focus:bg-gray-50"
+                                onClick={() => setAssigningId(s.id)}
+                              >
+                                <User className="w-4 h-4 mr-2 text-gray-400" />
+                                {tech ? "Reassign Tech" : "Assign Tech"}
+                              </DropdownMenuItem>
+
+                              {s.status !== "Completed" && (
+                                <DropdownMenuItem 
+                                  className="cursor-pointer text-green-600 focus:bg-green-50 focus:text-green-700"
+                                  onClick={() => handleUpdateStatus(s.id, "Completed")}
+                                >
+                                  <ShieldCheck className="w-4 h-4 mr-2" />
+                                  Mark Completed
+                                </DropdownMenuItem>
+                              )}
+
+                              {s.status !== "In Progress" && tech && (
+                                <DropdownMenuItem 
+                                  className="cursor-pointer text-blue-600 focus:bg-blue-50 focus:text-blue-700"
+                                  onClick={() => handleUpdateStatus(s.id, "In Progress")}
+                                >
+                                  <RefreshCw className="w-4 h-4 mr-2" />
+                                  Set In Progress
+                                </DropdownMenuItem>
+                              )}
+
+                              {s.status !== "Pending" && (
+                                <DropdownMenuItem 
+                                  className="cursor-pointer text-yellow-600 focus:bg-yellow-50 focus:text-yellow-700"
+                                  onClick={() => handleUpdateStatus(s.id, "Pending")}
+                                >
+                                  <Clock className="w-4 h-4 mr-2" />
+                                  Set Pending
+                                </DropdownMenuItem>
+                              )}
+
+                              <DropdownMenuItem 
+                                className="cursor-pointer text-red-600 focus:bg-red-50 focus:text-red-700"
+                                onClick={() => handleDeleteRequest(s.id)}
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Delete Request
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     );

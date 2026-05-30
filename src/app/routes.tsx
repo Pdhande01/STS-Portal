@@ -16,6 +16,7 @@ import { AdminTechnicians } from "./pages/admin/AdminTechnicians";
 import { AdminServices } from "./pages/admin/AdminServices";
 import { AdminOrders } from "./pages/admin/AdminOrders";
 import { AdminProducts } from "./pages/admin/AdminProducts";
+import { AdminAuditLogs } from "./pages/admin/AdminAuditLogs";
 import { NotFound } from "./pages/NotFound";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
           { path: "services", element: <AdminServices /> },
           { path: "orders", element: <AdminOrders /> },
           { path: "products", element: <AdminProducts /> },
+          { path: "audit-logs", element: <AdminAuditLogs /> },
         ],
       },
       { path: "*", Component: NotFound },

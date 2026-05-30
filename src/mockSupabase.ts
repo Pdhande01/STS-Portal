@@ -504,6 +504,75 @@ class MockAuth {
     };
   }
 
+  async signInWithPassword(params: { email: string, password?: string }) {
+    const { email, password } = params;
+    const profiles = JSON.parse(localStorage.getItem('sts_profiles') || '[]');
+    let profile = profiles.find((p: any) => p.email === email);
+
+    // If password is set in localStorage, verify it
+    const storedPassword = localStorage.getItem(`sts_password_${email}`);
+    if (storedPassword && password && storedPassword !== password) {
+      throw new Error('Invalid email or password.');
+    }
+
+    if (!profile) {
+      let role = 'user';
+      let fullName = email.split('@')[0];
+      fullName = fullName.charAt(0).toUpperCase() + fullName.slice(1);
+
+      if (email.includes('admin') || email === 'parthdhande7894@gmail.com') {
+        role = 'admin';
+      } else if (email.includes('tech') || email.includes('technician')) {
+        role = 'technician';
+      }
+
+      profile = {
+        id: 'mock-user-' + Math.random().toString(36).substring(2, 11),
+        full_name: fullName,
+        phone: '+91 98765 43210',
+        role: role,
+        specialization: role === 'technician' ? 'Laptop Repair' : null,
+        created_at: new Date().toISOString(),
+        email: email,
+        status: 'active'
+      };
+      profiles.push(profile);
+      localStorage.setItem('sts_profiles', JSON.stringify(profiles));
+    } else if (email === 'parthdhande7894@gmail.com' || email === 'admin@smarttech.com') {
+      profile.role = 'admin';
+      localStorage.setItem('sts_profiles', JSON.stringify(profiles));
+    }
+
+    // Save password for pre-existing accounts so it's consistent if they log in again
+    if (password && !storedPassword) {
+      localStorage.setItem(`sts_password_${email}`, password);
+    }
+
+    const user: User = {
+      id: profile.id,
+      email: email,
+      created_at: profile.created_at,
+      app_metadata: {},
+      user_metadata: { full_name: profile.full_name, phone: profile.phone, role: profile.role },
+      aud: 'authenticated',
+      role: 'authenticated'
+    };
+
+    const session = {
+      access_token: 'mock-jwt-token-' + Math.random().toString(36).substring(2, 11),
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'mock-refresh-token',
+      user: user
+    };
+
+    localStorage.setItem('sts_session', JSON.stringify(session));
+    console.log(`%c[MOCK AUTH] User signed in. Email: ${email}, Role: ${profile.role}`, 'color: #10b981; font-weight: bold;');
+    this.trigger('SIGNED_IN', session);
+
+    return { data: { user, session }, error: null };
+  }
+
   async signInWithOtp(params: { email: string }) {
     const email = params.email;
     const otpCode = '123456';
@@ -580,12 +649,16 @@ class MockAuth {
   }
 
   async signUp(params: { email: string, password?: string, options?: any }) {
-    const { email, options } = params;
+    const { email, password, options } = params;
     const metadata = options?.data || {};
     const profiles = JSON.parse(localStorage.getItem('sts_profiles') || '[]');
     
     if (profiles.some((p: any) => p.email === email)) {
       throw new Error('User already exists.');
+    }
+
+    if (password) {
+      localStorage.setItem(`sts_password_${email}`, password);
     }
 
     const userId = 'mock-user-' + Math.random().toString(36).substring(2, 11);
@@ -620,6 +693,35 @@ class MockAuth {
 
     console.log(`%c[MOCK AUTH] User registered. Email: ${email}, Role: ${role}`, 'color: #10b981; font-weight: bold;');
     return { data: { user }, error: null };
+  }
+
+  async updateUser(params: { password?: string, data?: any }) {
+    const sessionStr = localStorage.getItem('sts_session');
+    if (!sessionStr) throw new Error('Not authenticated');
+    
+    const session = JSON.parse(sessionStr);
+    const email = session.user.email;
+
+    if (params.password) {
+      localStorage.setItem(`sts_password_${email}`, params.password);
+    }
+
+    if (params.data) {
+      session.user.user_metadata = { ...session.user.user_metadata, ...params.data };
+      
+      const profiles = JSON.parse(localStorage.getItem('sts_profiles') || '[]');
+      const profileIndex = profiles.findIndex((p: any) => p.email === email);
+      if (profileIndex !== -1) {
+        profiles[profileIndex].full_name = params.data.full_name || profiles[profileIndex].full_name;
+        profiles[profileIndex].phone = params.data.phone !== undefined ? params.data.phone : profiles[profileIndex].phone;
+        localStorage.setItem('sts_profiles', JSON.stringify(profiles));
+      }
+      
+      localStorage.setItem('sts_session', JSON.stringify(session));
+      this.trigger('USER_UPDATED', session);
+    }
+
+    return { data: { user: session.user }, error: null };
   }
 
   async signOut() {

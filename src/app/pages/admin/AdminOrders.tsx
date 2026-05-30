@@ -100,6 +100,11 @@ export function AdminOrders() {
                         <div className="flex flex-col">
                           <span className="font-medium text-gray-900">{o.profiles?.full_name}</span>
                           <span className="text-xs text-gray-500">{o.profiles?.phone ?? "No phone"}</span>
+                          {o.delivery_address && (
+                            <span className="text-xs text-gray-600 mt-1.5 font-sans bg-gray-100 px-2 py-0.5 rounded border border-gray-200 inline-block max-w-[220px] truncate" title={o.delivery_address}>
+                              📍 {o.delivery_address}
+                            </span>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="font-bold">

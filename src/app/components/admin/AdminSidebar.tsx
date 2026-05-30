@@ -1,6 +1,6 @@
 import { Link, useLocation } from "react-router";
 import { 
-  LayoutDashboard, Users, UserCog, Wrench, ShoppingBag, Package, LogOut 
+  LayoutDashboard, Users, UserCog, Wrench, ShoppingBag, Package, LogOut, History 
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { Button } from "../ui/button";
@@ -13,6 +13,7 @@ const menuItems = [
   { icon: Wrench, label: "Services", href: "/admin/services" },
   { icon: ShoppingBag, label: "Orders", href: "/admin/orders" },
   { icon: Package, label: "Products", href: "/admin/products" },
+  { icon: History, label: "Audit Logs", href: "/admin/audit-logs" },
 ];
 
 export function AdminSidebar() {
