@@ -8,6 +8,7 @@ import { BookService } from "./pages/user/BookService";
 import { TrackService } from "./pages/user/TrackService";
 import { Shop } from "./pages/user/Shop";
 import { OrderProducts } from "./pages/user/OrderProducts";
+import { CostEstimator } from "./pages/user/CostEstimator";
 import { TechnicianDashboard } from "./pages/technician/TechnicianDashboard";
 import { AdminLayout } from "./pages/admin/AdminLayout";
 import { AdminOverview } from "./pages/admin/AdminOverview";
@@ -47,6 +48,10 @@ export const router = createBrowserRouter([
       {
         path: "user/order/:orderId",
         element: <ProtectedRoute role="user"><OrderProducts /></ProtectedRoute>,
+      },
+      {
+        path: "user/cost-estimator",
+        element: <ProtectedRoute role="user"><CostEstimator /></ProtectedRoute>,
       },
       {
         path: "technician/dashboard",

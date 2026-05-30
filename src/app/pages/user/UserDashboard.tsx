@@ -1,6 +1,6 @@
 import { Link, useNavigate } from "react-router";
 import { useEffect, useState } from "react";
-import { Home, Package, Wrench, ShoppingCart, Star, LogOut, TrendingUp, Activity, Loader2, User as UserIcon } from "lucide-react";
+import { Home, Package, Wrench, ShoppingCart, Star, LogOut, TrendingUp, Activity, Loader2, User as UserIcon, Calculator } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../components/ui/card";
 import { Badge } from "../../components/ui/badge";
@@ -446,15 +446,17 @@ export function UserDashboard() {
                 </Card>
               </Link>
 
-              <Card className="hover:shadow-2xl transition-all cursor-pointer border-2 hover:border-yellow-500 bg-gradient-to-br from-yellow-500 to-orange-500 text-white h-full">
-                <CardHeader>
-                  <TrendingUp className="w-12 h-12 mb-2" />
-                  <CardTitle className="text-xl">Analytics</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm text-yellow-100">View spending history →</p>
-                </CardContent>
-              </Card>
+              <Link to="/user/cost-estimator" className="block">
+                <Card className="hover:shadow-2xl transition-all cursor-pointer border-2 hover:border-yellow-500 bg-gradient-to-br from-yellow-500 to-orange-500 text-white h-full">
+                  <CardHeader>
+                    <Calculator className="w-12 h-12 mb-2" />
+                    <CardTitle className="text-xl">Cost Estimator</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-yellow-100">Calculate repair costs →</p>
+                  </CardContent>
+                </Card>
+              </Link>
             </div>
 
             {/* Recent Services */}

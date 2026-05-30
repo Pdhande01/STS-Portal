@@ -1,5 +1,5 @@
-import { Link, useNavigate } from "react-router";
-import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router";
+import { useState, useEffect } from "react";
 import { Wrench, LogOut, Calendar, Loader2 } from "lucide-react";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
@@ -13,20 +13,34 @@ import { createServiceRequest } from "../../../lib/services";
 export function BookService() {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const prefilledData = location.state as {
+    deviceType?: string;
+    brand?: string;
+    issue?: string;
+    description?: string;
+  } | null;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [formData, setFormData] = useState({
-    deviceType: "",
-    brand: "",
+    deviceType: prefilledData?.deviceType ?? "",
+    brand: prefilledData?.brand ?? "",
     model: "",
-    issue: "",
-    description: "",
+    issue: prefilledData?.issue ?? "",
+    description: prefilledData?.description ?? "",
     serviceLocation: "",
     preferredDate: "",
     preferredTime: "",
     address: "",
     phone: profile?.phone ?? "",
   });
+
+  useEffect(() => {
+    if (profile?.phone && !formData.phone) {
+      setFormData(prev => ({ ...prev, phone: profile.phone || "" }));
+    }
+  }, [profile]);
 
   const handleLogout = async () => { await signOut(); navigate("/"); };
 
