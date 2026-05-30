@@ -1,17 +1,25 @@
 import { useEffect, useState } from "react";
-import { ShoppingBag, Search, Eye, CheckCircle, Package, Truck, XCircle, MoreVertical } from "lucide-react";
+import { ShoppingBag, Search, Eye, CheckCircle, Package, Truck, XCircle, MoreVertical, Trash2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "../../components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../../components/ui/table";
 import { Badge } from "../../components/ui/badge";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
-import { getAllOrders, updateOrderStatus } from "../../../lib/admin";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "../../components/ui/dialog";
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuTrigger 
+} from "../../components/ui/dropdown-menu";
+import { getAllOrders, updateOrderStatus, deleteOrder } from "../../../lib/admin";
 import { Loader2 } from "lucide-react";
 
 export function AdminOrders() {
   const [orders, setOrders] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   const loadOrders = async () => {
     try {
@@ -25,6 +33,20 @@ export function AdminOrders() {
   };
 
   useEffect(() => { loadOrders(); }, []);
+
+  const handleDeleteOrder = async (orderId: string) => {
+    if (!window.confirm("Are you sure you want to permanently delete this order?")) {
+      return;
+    }
+    try {
+      await deleteOrder(orderId);
+      alert("Order deleted successfully.");
+      await loadOrders();
+    } catch (err) {
+      console.error(err);
+      alert("Failed to delete order.");
+    }
+  };
 
   const handleStatusUpdate = async (orderId: string, status: string) => {
     try {
@@ -137,9 +159,70 @@ export function AdminOrders() {
                               <CheckCircle className="w-3 h-3 mr-1" /> Deliver
                             </Button>
                           )}
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400">
-                            <MoreVertical className="w-4 h-4" />
-                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 focus:ring-0 focus:ring-offset-0">
+                                <MoreVertical className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 bg-white border border-gray-100 shadow-xl rounded-xl p-1 z-50">
+                              <DropdownMenuItem 
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                                onClick={() => setSelectedOrder(o)}
+                              >
+                                <Eye className="w-4 h-4 text-purple-500" />
+                                View Details
+                              </DropdownMenuItem>
+                              
+                              {o.status === "Processing" && (
+                                <DropdownMenuItem 
+                                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                                  onClick={() => handleStatusUpdate(o.id, "Shipped")}
+                                >
+                                  <Truck className="w-4 h-4 text-blue-500" />
+                                  Ship Order
+                                </DropdownMenuItem>
+                              )}
+                              
+                              {o.status === "Shipped" && (
+                                <DropdownMenuItem 
+                                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                                  onClick={() => handleStatusUpdate(o.id, "Delivered")}
+                                >
+                                  <CheckCircle className="w-4 h-4 text-green-500" />
+                                  Deliver Order
+                                </DropdownMenuItem>
+                              )}
+
+                              {o.status !== "Processing" && (
+                                <DropdownMenuItem 
+                                  className="flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-lg cursor-pointer transition-colors"
+                                  onClick={() => handleStatusUpdate(o.id, "Processing")}
+                                >
+                                  <Package className="w-4 h-4 text-orange-500" />
+                                  Set Processing
+                                </DropdownMenuItem>
+                              )}
+
+                              {o.status !== "Cancelled" && o.status !== "Delivered" && (
+                                <DropdownMenuItem 
+                                  className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg cursor-pointer transition-colors font-medium"
+                                  onClick={() => handleStatusUpdate(o.id, "Cancelled")}
+                                >
+                                  <XCircle className="w-4 h-4 text-red-500" />
+                                  Cancel Order
+                                </DropdownMenuItem>
+                              )}
+
+                              <DropdownMenuItem 
+                                className="flex items-center gap-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 hover:text-red-700 rounded-lg cursor-pointer transition-colors border-t border-gray-100 mt-1 font-medium"
+                                onClick={() => handleDeleteOrder(o.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-red-500" />
+                                Delete Order
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                     </TableRow>
@@ -156,6 +239,101 @@ export function AdminOrders() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Order Details Dialog */}
+      {selectedOrder && (
+        <Dialog open={!!selectedOrder} onOpenChange={(open) => !open && setSelectedOrder(null)}>
+          <DialogContent className="max-w-2xl bg-white p-6 rounded-2xl shadow-2xl border-none">
+            <DialogHeader className="border-b pb-4 mb-4">
+              <div className="flex justify-between items-center">
+                <div>
+                  <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                    Order Details
+                  </DialogTitle>
+                  <DialogDescription className="text-sm">
+                    Order ID: #{selectedOrder.id.slice(0, 8).toUpperCase()}
+                  </DialogDescription>
+                </div>
+                <Badge className={`
+                  ${selectedOrder.status === "Delivered" ? "bg-green-500" : 
+                    selectedOrder.status === "Shipped" ? "bg-blue-500" : 
+                    selectedOrder.status === "Processing" ? "bg-orange-500" : 
+                    "bg-gray-500"}
+                `}>
+                  {selectedOrder.status}
+                </Badge>
+              </div>
+            </DialogHeader>
+
+            <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+              <div className="grid grid-cols-2 gap-6 text-sm">
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-gray-500 uppercase text-xs tracking-wider">Merchant</h4>
+                  <p className="font-medium text-gray-900">Smart Tech Service Portal</p>
+                  <p className="text-gray-600">Plot No. 42, Tech Park, Main Street</p>
+                  <p className="text-gray-600">Mumbai, Maharashtra, 400001</p>
+                </div>
+                <div className="space-y-1">
+                  <h4 className="font-semibold text-gray-500 uppercase text-xs tracking-wider">Customer</h4>
+                  <p className="font-medium text-gray-900">{selectedOrder.profiles?.full_name}</p>
+                  <p className="text-gray-600">{selectedOrder.profiles?.phone ?? "No phone"}</p>
+                  <p className="text-gray-600 italic whitespace-pre-line">{selectedOrder.delivery_address ?? "Not specified"}</p>
+                </div>
+              </div>
+
+              {/* Items List */}
+              <div className="border rounded-xl overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead className="bg-gray-50 text-gray-600 font-semibold border-b">
+                    <tr>
+                      <th className="py-2.5 px-4 text-left">Product</th>
+                      <th className="py-2.5 px-4 text-center">Qty</th>
+                      <th className="py-2.5 px-4 text-right">Price</th>
+                      <th className="py-2.5 px-4 text-right">Total</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 text-gray-800">
+                    {selectedOrder.order_items?.map((item: any) => (
+                      <tr key={item.id}>
+                        <td className="py-3 px-4 text-left font-medium">{item.products?.name ?? 'Unknown Component'}</td>
+                        <td className="py-3 px-4 text-center">{item.quantity}</td>
+                        <td className="py-3 px-4 text-right">₹{item.price_at_purchase.toLocaleString()}</td>
+                        <td className="py-3 px-4 text-right font-semibold">₹{(item.quantity * item.price_at_purchase).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Summaries */}
+              <div className="w-80 ml-auto space-y-2 text-sm pt-2">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal (excluding Tax)</span>
+                  <span>₹{(selectedOrder.total_amount - (selectedOrder.total_amount * 0.18)).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>GST (18% Included)</span>
+                  <span>₹{(selectedOrder.total_amount * 0.18).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+                <div className="flex justify-between text-gray-600 border-b pb-2">
+                  <span>Shipping Fee</span>
+                  <span>₹0.00</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold text-gray-900 pt-1">
+                  <span>Grand Total</span>
+                  <span className="text-blue-600">₹{selectedOrder.total_amount.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 mt-6 flex justify-end">
+              <Button variant="outline" onClick={() => setSelectedOrder(null)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }

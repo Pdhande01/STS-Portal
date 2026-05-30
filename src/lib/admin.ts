@@ -347,3 +347,21 @@ export async function updateOrderStatus(orderId: string, status: string) {
 
   return data
 }
+
+// ─── Delete Order ─────────────────────────────────────────────────────────────
+
+export async function deleteOrder(orderId: string): Promise<void> {
+  const { error } = await supabase
+    .from('orders')
+    .delete()
+    .eq('id', orderId)
+
+  if (error) throw error
+
+  await createAuditLog(
+    'Delete Order',
+    `Order ID: ${orderId}`,
+    `Permanently deleted order from database.`
+  )
+}
+
