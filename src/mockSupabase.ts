@@ -52,8 +52,8 @@ const initialProducts = [
     price: 4500,
     stock: 15,
     image_url: 'https://images.unsplash.com/photo-1591405351990-4726e33df58d?w=300&q=80',
-    rating: 4.8,
-    reviews: 34,
+    rating: 4.5,
+    reviews: 2,
     trending: true,
     created_at: '2026-01-01T00:00:00Z'
   },
@@ -64,8 +64,8 @@ const initialProducts = [
     price: 8900,
     stock: 8,
     image_url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&q=80',
-    rating: 4.9,
-    reviews: 52,
+    rating: 5.0,
+    reviews: 2,
     trending: true,
     created_at: '2026-01-02T00:00:00Z'
   },
@@ -76,8 +76,8 @@ const initialProducts = [
     price: 9500,
     stock: 5,
     image_url: 'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?w=300&q=80',
-    rating: 4.7,
-    reviews: 28,
+    rating: 4.5,
+    reviews: 2,
     trending: false,
     created_at: '2026-01-03T00:00:00Z'
   },
@@ -88,8 +88,8 @@ const initialProducts = [
     price: 11200,
     stock: 12,
     image_url: 'https://images.unsplash.com/photo-1591405351990-4726e33df58d?w=300&q=80',
-    rating: 4.9,
-    reviews: 15,
+    rating: 5.0,
+    reviews: 2,
     trending: true,
     created_at: '2026-01-04T00:00:00Z'
   },
@@ -100,12 +100,106 @@ const initialProducts = [
     price: 12500,
     stock: 4,
     image_url: 'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=300&q=80',
-    rating: 4.6,
-    reviews: 40,
+    rating: 4.5,
+    reviews: 2,
     trending: false,
     created_at: '2026-01-05T00:00:00Z'
   }
 ];
+
+const initialProductReviews = [
+  {
+    id: 'rev-1',
+    product_id: 'prod-1',
+    user_id: 'mock-user-id',
+    full_name: 'John Doe',
+    rating: 5,
+    comment: 'Works perfectly, very easy to install on my Dell Inspiron.',
+    created_at: '2026-05-20T10:00:00Z'
+  },
+  {
+    id: 'rev-2',
+    product_id: 'prod-1',
+    user_id: 'mock-tech-id',
+    full_name: 'Jane Smith',
+    rating: 4,
+    comment: 'Decent speed boost for the price. Would buy again.',
+    created_at: '2026-05-21T11:30:00Z'
+  },
+  {
+    id: 'rev-3',
+    product_id: 'prod-2',
+    user_id: 'mock-parth-id',
+    full_name: 'Parth Dhande',
+    rating: 5,
+    comment: 'Blazing fast read/write speeds. Samsung never disappoints.',
+    created_at: '2026-05-22T09:15:00Z'
+  },
+  {
+    id: 'rev-4',
+    product_id: 'prod-2',
+    user_id: 'mock-user-id',
+    full_name: 'John Doe',
+    rating: 5,
+    comment: 'Excellent SSD for boot drive. PS5 compatibility is seamless.',
+    created_at: '2026-05-23T14:20:00Z'
+  },
+  {
+    id: 'rev-5',
+    product_id: 'prod-3',
+    user_id: 'mock-tech-id',
+    full_name: 'Jane Smith',
+    rating: 4,
+    comment: 'Ergonomics are top notch, but the scroll wheel took a day to get used to.',
+    created_at: '2026-05-24T16:45:00Z'
+  },
+  {
+    id: 'rev-6',
+    product_id: 'prod-3',
+    user_id: 'mock-user-id',
+    full_name: 'John Doe',
+    rating: 5,
+    comment: 'The best office mouse money can buy. Silent clicks are amazing.',
+    created_at: '2026-05-25T08:10:00Z'
+  },
+  {
+    id: 'rev-7',
+    product_id: 'prod-4',
+    user_id: 'mock-user-id',
+    full_name: 'John Doe',
+    rating: 5,
+    comment: 'Extremely fast RAM. Beautiful design, runs cool.',
+    created_at: '2026-05-26T10:12:00Z'
+  },
+  {
+    id: 'rev-8',
+    product_id: 'prod-4',
+    user_id: 'mock-tech-id',
+    full_name: 'Jane Smith',
+    rating: 5,
+    comment: 'Excellent build quality and XMP profile loaded instantly.',
+    created_at: '2026-05-27T11:40:00Z'
+  },
+  {
+    id: 'rev-9',
+    product_id: 'prod-5',
+    user_id: 'mock-user-id',
+    full_name: 'John Doe',
+    rating: 4,
+    comment: 'Very solid budget NVMe SSD. Speed is exactly as advertised.',
+    created_at: '2026-05-28T14:50:00Z'
+  },
+  {
+    id: 'rev-10',
+    product_id: 'prod-5',
+    user_id: 'mock-parth-id',
+    full_name: 'Parth Dhande',
+    rating: 5,
+    comment: 'Awesome storage space. Installed windows in under 5 minutes.',
+    created_at: '2026-05-29T16:22:00Z'
+  }
+];
+
 
 const initialServiceRequests = [
   {
@@ -207,6 +301,10 @@ function initLocalStorage() {
     localStorage.setItem('sts_products', JSON.stringify(initialProducts));
     changed = true;
   }
+  if (!localStorage.getItem('sts_product_reviews')) {
+    localStorage.setItem('sts_product_reviews', JSON.stringify(initialProductReviews));
+    changed = true;
+  }
   if (!localStorage.getItem('sts_service_requests')) {
     localStorage.setItem('sts_service_requests', JSON.stringify(initialServiceRequests));
     changed = true;
@@ -235,6 +333,7 @@ if (typeof window !== 'undefined') {
     const keys = [
       'sts_profiles',
       'sts_products',
+      'sts_product_reviews',
       'sts_service_requests',
       'sts_service_updates',
       'sts_orders',

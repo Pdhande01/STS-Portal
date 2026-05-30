@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Product, Order } from './supabase'
+import type { Product, Order, ProductReview } from './supabase'
 import { createAuditLog } from './audit'
 
 // ─── Get All Products ─────────────────────────────────────────────────────────
@@ -161,3 +161,93 @@ export async function getAllOrders(): Promise<Order[]> {
   if (error) throw error
   return data as Order[]
 }
+
+// ─── Product Reviews ──────────────────────────────────────────────────────────
+
+export async function getProductReviews(productId: string): Promise<ProductReview[]> {
+  const { data, error } = await supabase
+    .from('product_reviews')
+    .select('*')
+    .eq('product_id', productId)
+    .order('created_at', { ascending: false })
+
+  if (error) throw error
+  return data as ProductReview[]
+}
+
+export async function addProductReview(
+  productId: string,
+  rating: number,
+  comment: string
+): Promise<ProductReview> {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) throw new Error('Not authenticated')
+
+  // Get user's name from profile
+  let fullName = 'Anonymous'
+  try {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('full_name')
+      .eq('id', user.id)
+      .single()
+
+    if (profile?.full_name) {
+      fullName = profile.full_name
+    } else if (user.user_metadata?.full_name) {
+      fullName = user.user_metadata.full_name
+    } else if (user.email) {
+      fullName = user.email.split('@')[0]
+      fullName = fullName.charAt(0).toUpperCase() + fullName.slice(1)
+    }
+  } catch (e) {
+    console.warn('Could not fetch profile for review name:', e)
+    if (user.user_metadata?.full_name) {
+      fullName = user.user_metadata.full_name
+    } else if (user.email) {
+      fullName = user.email.split('@')[0]
+    }
+  }
+
+  // Insert review
+  const { data: review, error: insertError } = await supabase
+    .from('product_reviews')
+    .insert({
+      product_id: productId,
+      user_id: user.id,
+      full_name: fullName,
+      rating,
+      comment,
+    })
+    .select()
+    .single()
+
+  if (insertError) throw insertError
+
+  // Fetch all reviews for this product to recalculate rating
+  const { data: reviews, error: fetchReviewsError } = await supabase
+    .from('product_reviews')
+    .select('rating')
+    .eq('product_id', productId)
+
+  if (fetchReviewsError) throw fetchReviewsError
+
+  const totalReviews = reviews.length
+  const averageRating = totalReviews > 0
+    ? Math.round((reviews.reduce((sum: number, r: any) => sum + r.rating, 0) / totalReviews) * 10) / 10
+    : 0
+
+  // Update product statistics
+  const { error: updateError } = await supabase
+    .from('products')
+    .update({
+      rating: averageRating,
+      reviews: totalReviews,
+    })
+    .eq('id', productId)
+
+  if (updateError) throw updateError
+
+  return review as ProductReview
+}
+
