@@ -83,8 +83,10 @@ export function TechnicianDashboard() {
       {/* Header */}
       <header className="bg-green-600 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Wrench className="w-6 h-6" />
+          <div className="flex items-center gap-3">
+            <div className="bg-white p-1.5 rounded-xl flex items-center justify-center w-16 h-16">
+              <img src="/logo.png" alt="Smart Tech Logo" className="w-14 h-14 object-contain" />
+            </div>
             <h1 className="text-xl font-bold">Technician Dashboard</h1>
           </div>
           <div className="flex items-center gap-4">

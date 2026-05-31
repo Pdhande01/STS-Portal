@@ -154,10 +154,8 @@ export function Shop() {
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b sticky top-0 z-50 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
-              <Wrench className="w-6 h-6 text-white" />
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Smart Tech Logo" className="w-18 h-18 object-contain" />
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Smart Tech Service Portal

@@ -156,6 +156,7 @@ export function UserDashboard() {
           <div class="container">
             <div class="header">
               <div class="logo-section">
+                <img src="${window.location.origin}/logo.png" alt="Logo" style="width: 70px; height: 70px; object-fit: contain;" />
                 <span class="logo-text">SMART TECH SERVICE</span>
               </div>
               <div class="invoice-details">
@@ -255,10 +256,8 @@ export function UserDashboard() {
       {/* Header */}
       <header className="bg-white/95 backdrop-blur-sm border-b shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <div className="bg-gradient-to-br from-blue-600 to-purple-600 p-2 rounded-lg">
-              <Wrench className="w-6 h-6 text-white" />
-            </div>
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Smart Tech Logo" className="w-18 h-18 object-contain" />
             <div>
               <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 Smart Tech Service Portal

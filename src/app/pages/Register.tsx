@@ -56,13 +56,13 @@ export function Register() {
 
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center gap-3 mb-6">
-            <div className="bg-white p-3 rounded-2xl shadow-2xl">
-              <Wrench className="w-10 h-10 text-blue-600" />
+          <Link to="/" className="flex flex-col items-center gap-4 mb-6">
+            <div className="bg-white p-4 rounded-3xl shadow-2xl flex items-center justify-center w-32 h-32">
+              <img src="/logo.png" alt="Smart Tech Logo" className="w-28 h-28 object-contain" />
             </div>
-            <div className="text-left">
+            <div className="text-center">
               <span className="text-3xl font-bold text-white block">Smart Tech Service Portal</span>
-              <span className="text-blue-200 text-sm flex items-center gap-1">
+              <span className="text-blue-200 text-sm flex items-center justify-center gap-1">
                 <Sparkles className="w-3 h-3" />
                 Your Tech Partner
               </span>

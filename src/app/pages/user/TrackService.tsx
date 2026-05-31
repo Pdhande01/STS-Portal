@@ -29,8 +29,8 @@ export function TrackService() {
       {/* Header */}
       <header className="bg-white border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Wrench className="w-6 h-6 text-blue-600" />
+          <div className="flex items-center gap-3">
+            <img src="/logo.png" alt="Smart Tech Logo" className="w-16 h-16 object-contain" />
             <h1 className="text-xl font-bold">Smart Tech Service Portal</h1>
           </div>
           <div className="flex items-center gap-4">
